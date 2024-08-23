@@ -1,7 +1,9 @@
-import { Button, Card, Form, Input, message } from 'antd'
+import { Button, Card, Form, Input, Popconfirm, message } from 'antd'
 import './index.css'
-import { list } from '../../interfaces'
+import { deleteBook, list } from '../../interfaces'
 import { useEffect, useState } from 'react';
+import { CreateBookModal } from './CreateBookModal';
+import { UpdateBookModal } from './UpdateBookModal';
 
 interface Book {
     id: number;
@@ -26,15 +28,40 @@ export function BookManage(){
         }
     }
 
+    const [num, setNum] = useState(0)
+
     useEffect(() => {
         fetchData()
-    }, [name])
+    }, [name, num])
 
     async function searchBook(values: { name: string }) {
         setName(values.name)
     }
 
+    const [isCreateBookModalOpen, setIsCreateBookModalOpen] = useState(false)
+    const [isUpdateBookModalOpen, setUpdateBookModalOpen] = useState(false)
+    const [updateId, setUpdateId] = useState(0)
+
+    async function handleDelete(id: number) {
+        try {
+            await deleteBook(id);        
+            message.success('删除成功');
+            setNum(Math.random())
+        } catch(e: any) {
+            message.error(e.response.data.message);
+        }
+    }
+    
+
     return <div id='bookManage'>
+        <CreateBookModal isOpen={isCreateBookModalOpen} handleClose={() => { 
+            setIsCreateBookModalOpen(false) 
+            setNum(Math.random())
+        }}></CreateBookModal>
+        <UpdateBookModal id={updateId} isOpen={isUpdateBookModalOpen} handleClose={() => {
+            setUpdateBookModalOpen(false)
+            setNum(Math.random())
+        }}></UpdateBookModal>
         <h1>图书管理系统</h1>
         <div className="content">
             <div className="book-search">
@@ -49,7 +76,7 @@ export function BookManage(){
                     </Form.Item>
                     <Form.Item label="">
                         <Button type="primary" htmlType='submit'>搜索图书</Button>
-                        <Button type="primary" htmlType='submit' style={{ background: 'green', marginLeft: '20px' }}>添加图书</Button>
+                        <Button type="primary" htmlType='submit' style={{ background: 'green', marginLeft: '20px' }} onClick={() => { setIsCreateBookModalOpen(true) }}>添加图书</Button>
                     </Form.Item>
                 </Form>
             </div>
@@ -66,9 +93,20 @@ export function BookManage(){
                             <h2>{book.name}</h2>
                             <div>{book.author}</div>
                             <div className='links'>
-                                <a href="#">详情</a>
-                                <a href="#">编辑</a>
-                                <a href="#">删除</a>
+                                <a href="#" onClick={() => { message.info('比较简单，省略') }}>详情</a>
+                                <a href="#" onClick={() => {
+                                    setUpdateId(book.id)
+                                    setUpdateBookModalOpen(true)
+                                }}>编辑</a>
+                                <Popconfirm
+                                    title="图书删除"
+                                    description="确认删除吗？"
+                                    onConfirm={() => handleDelete(book.id)}
+                                    okText="Yes"
+                                    cancelText="No"
+                                >  
+                                    <a href="#">删除</a>
+                                </Popconfirm>
                             </div>
                         </Card>
                     })
